@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Restaurante</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .table-occupied {
+            background-color: #fecaca;
+        }
+        .table-available {
+            background-color: #bbf7d0;
+        }
+        .table-reserved {
+            background-color: #bfdbfe;
+        }
+        .counter-box {
+            transition: all 0.3s ease;
+        }
+        .counter-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .full-capacity {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-indigo-700">Controle de Restaurante</h1>
+        
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="tablesTab" class="py-2 px-4 font-medium text-indigo-600 border-b-2 border-indigo-600">Mesas</button>
+            <button id="customersTab" class="py-2 px-4 font-medium text-gray-500 hover:text-indigo-500">Controle de Entradas</button>
+        </div>
+        
+        <!-- Tables Section -->
+        <div id="tablesSection" class="section-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Gerenciamento de Mesas</h2>
+                <button onclick="openAddTableModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Adicionar Mesa
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="tablesContainer">
+                <!-- Tables will be dynamically added here -->
+            </div>
+        </div>
+        
+        <!-- Customers Section -->
+        <div id="customersSection" class="section-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold">Controle de Entradas</h2>
+                <div id="capacityAlert" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Atenção!</strong>
+                    <span class="block sm:inline">50 pessoas entraram às <span id="fullTime"></span>.</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Homens Counter -->
+                <div class="counter-box bg-white p-6 rounded-lg shadow text-center">
+                    <h3 class="text-lg font-semibold mb-2 text-blue-600">Homens</h3>
+                    <div class="text-4xl font-bold mb-4 text-blue-600" id="menCount">0</div>
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="updateCounter('men', -1)" class="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg hover:bg-blue-200">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button onclick="updateCounter('men', 1)" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Mulheres Counter -->
+                <div class="counter-box bg-white p-6 rounded-lg shadow text-center">
+                    <h3 class="text-lg font-semibold mb-2 text-pink-600">Mulheres</h3>
+                    <div class="text-4xl font-bold mb-4 text-pink-600" id="womenCount">0</div>
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="updateCounter('women', -1)" class="bg-pink-100 text-pink-800 px-4 py-2 rounded-lg hover:bg-pink-200">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button onclick="updateCounter('women', 1)" class="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Infantil Counter -->
+                <div class="counter-box bg-white p-6 rounded-lg shadow text-center">
+                    <h3 class="text-lg font-semibold mb-2 text-purple-600">Infantil</h3>
+                    <div class="text-4xl font-bold mb-4 text-purple-600" id="childrenCount">0</div>
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="updateCounter('children', -1)" class="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg hover:bg-purple-200">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <button onclick="updateCounter('children', 1)" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Counter -->
+            <div class="counter-box bg-white p-6 rounded-lg shadow text-center max-w-md mx-auto">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Total de Pessoas</h3>
+                <div class="text-5xl font-bold mb-2 text-gray-800" id="totalCount">0</div>
+                <div class="flex justify-center space-x-2">
+                    <button onclick="resetCounters()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                        <i class="fas fa-redo mr-2"></i> Reiniciar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Table Modal -->
+    <div id="addTableModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Adicionar Nova Mesa</h3>
+                <button onclick="closeModal('addTableModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="addTableForm" class="space-y-4">
+                <div>
+                    <label for="tableNumber" class="block text-sm font-medium text-gray-700">Número da Mesa</label>
+                    <input type="number" id="tableNumber" name="tableNumber" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+                <div>
+                    <label for="tableCapacity" class="block text-sm font-medium text-gray-700">Capacidade</label>
+                    <input type="number" id="tableCapacity" name="tableCapacity" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('addTableModal')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Table Modal -->
+    <div id="editTableModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Editar Mesa</h3>
+                <button onclick="closeModal('editTableModal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editTableForm" class="space-y-4">
+                <input type="hidden" id="editTableId">
+                <div>
+                    <label for="editTableNumber" class="block text-sm font-medium text-gray-700">Número da Mesa</label>
+                    <input type="number" id="editTableNumber" name="editTableNumber" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+                <div>
+                    <label for="editTableCapacity" class="block text-sm font-medium text-gray-700">Capacidade</label>
+                    <input type="number" id="editTableCapacity" name="editTableCapacity" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('editTableModal')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data storage
+        let tables = JSON.parse(localStorage.getItem('restaurantTables')) || [];
+        let counters = JSON.parse(localStorage.getItem('customerCounters')) || {
+            men: 0,
+            women: 0,
+            children: 0,
+            total: 0,
+            fullCapacityTime: null
+        };
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Show tables section by default
+            showSection('tablesSection');
+            
+            // Set up tab navigation
+            document.getElementById('tablesTab').addEventListener('click', () => showSection('tablesSection'));
+            document.getElementById('customersTab').addEventListener('click', () => showSection('customersSection'));
+            
+            // Render initial data
+            renderTables();
+            updateCounterDisplays();
+            
+            // Check if capacity was reached
+            if (counters.total >= 50 && counters.fullCapacityTime) {
+                showCapacityAlert();
+            }
+        });
+        
+        function setupEventListeners() {
+            // Table form submissions
+            document.getElementById('addTableForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addTable();
+            });
+            
+            document.getElementById('editTableForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateTable();
+            });
+        }
+        
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show the selected section
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update tab styling
+            document.getElementById('tablesTab').classList.remove('text-indigo-600', 'border-indigo-600');
+            document.getElementById('tablesTab').classList.add('text-gray-500');
+            document.getElementById('customersTab').classList.remove('text-indigo-600', 'border-indigo-600');
+            document.getElementById('customersTab').classList.add('text-gray-500');
+            
+            // Highlight the active tab
+            if (sectionId === 'tablesSection') {
+                document.getElementById('tablesTab').classList.remove('text-gray-500');
+                document.getElementById('tablesTab').classList.add('text-indigo-600', 'border-indigo-600');
+            } else if (sectionId === 'customersSection') {
+                document.getElementById('customersTab').classList.remove('text-gray-500');
+                document.getElementById('customersTab').classList.add('text-indigo-600', 'border-indigo-600');
+            }
+        }
+        
+        // Table Management Functions
+        function renderTables() {
+            const container = document.getElementById('tablesContainer');
+            container.innerHTML = '';
+            
+            if (tables.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-table text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">Nenhuma mesa cadastrada ainda.</p>
+                        <button onclick="openAddTableModal()" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                            Adicionar Primeira Mesa
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            tables.forEach(table => {
+                const tableElement = document.createElement('div');
+                tableElement.className = `rounded-lg shadow p-4 flex flex-col items-center ${table.status === 'available' ? 'table-available' : 'table-occupied'}`;
+                
+                tableElement.innerHTML = `
+                    <div class="text-xl font-bold">Mesa ${table.number}</div>
+                    <div class="text-sm">Capacidade: ${table.capacity} pessoas</div>
+                    <div class="text-sm capitalize">${table.status === 'available' ? 'disponível' : 'ocupada'}</div>
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="openEditTableModal(${table.id})" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTable(${table.id})" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(tableElement);
+            });
+        }
+        
+        function openAddTableModal() {
+            document.getElementById('addTableModal').classList.remove('hidden');
+            document.getElementById('tableNumber').focus();
+        }
+        
+        function openEditTableModal(tableId) {
+            const table = tables.find(t => t.id === tableId);
+            if (!table) return;
+            
+            document.getElementById('editTableId').value = table.id;
+            document.getElementById('editTableNumber').value = table.number;
+            document.getElementById('editTableCapacity').value = table.capacity;
+            
+            document.getElementById('editTableModal').classList.remove('hidden');
+            document.getElementById('editTableNumber').focus();
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        function addTable() {
+            const number = parseInt(document.getElementById('tableNumber').value);
+            const capacity = parseInt(document.getElementById('tableCapacity').value);
+            
+            if (tables.some(t => t.number === number)) {
+                alert('Já existe uma mesa com este número!');
+                return;
+            }
+            
+            const newId = tables.length > 0 ? Math.max(...tables.map(t => t.id)) + 1 : 1;
+            
+            tables.push({
+                id: newId,
+                number: number,
+                capacity: capacity,
+                status: 'available'
+            });
+            
+            saveTablesToLocalStorage();
+            closeModal('addTableModal');
+            renderTables();
+            document.getElementById('addTableForm').reset();
+        }
+        
+        function updateTable() {
+            const id = parseInt(document.getElementById('editTableId').value);
+            const number = parseInt(document.getElementById('editTableNumber').value);
+            const capacity = parseInt(document.getElementById('editTableCapacity').value);
+            
+            const tableIndex = tables.findIndex(t => t.id === id);
+            if (tableIndex === -1) return;
+            
+            // Check if number is already taken by another table
+            if (tables.some(t => t.number === number && t.id !== id)) {
+                alert('Já existe uma mesa com este número!');
+                return;
+            }
+            
+            tables[tableIndex].number = number;
+            tables[tableIndex].capacity = capacity;
+            
+            saveTablesToLocalStorage();
+            closeModal('editTableModal');
+            renderTables();
+        }
+        
+        function deleteTable(tableId) {
+            if (!confirm('Tem certeza que deseja excluir esta mesa?')) return;
+            
+            // Check if table is occupied
+            const table = tables.find(t => t.id === tableId);
+            if (table.status !== 'available') {
+                alert('Não é possível excluir uma mesa que está ocupada!');
+                return;
+            }
+            
+            tables = tables.filter(t => t.id !== tableId);
+            saveTablesToLocalStorage();
+            renderTables();
+        }
+        
+        function saveTablesToLocalStorage() {
+            localStorage.setItem('restaurantTables', JSON.stringify(tables));
+        }
+        
+        // Customer Counter Functions
+        function updateCounter(type, change) {
+            if (change === -1 && counters[type] <= 0) return;
+            
+            counters[type] += change;
+            counters.total = counters.men + counters.women + counters.children;
+            
+            // Check if we just reached 50 people
+            if (counters.total === 50 && change === 1) {
+                const now = new Date();
+                counters.fullCapacityTime = now.toLocaleTimeString('pt-BR');
+                showCapacityAlert();
+            }
+            
+            saveCountersToLocalStorage();
+            updateCounterDisplays();
+        }
+        
+        function updateCounterDisplays() {
+            document.getElementById('menCount').textContent = counters.men;
+            document.getElementById('womenCount').textContent = counters.women;
+            document.getElementById('childrenCount').textContent = counters.children;
+            document.getElementById('totalCount').textContent = counters.total;
+            
+            // Highlight if capacity is reached
+            const totalElement = document.getElementById('totalCount');
+            if (counters.total >= 50) {
+                totalElement.classList.add('text-red-600', 'full-capacity');
+                totalElement.classList.remove('text-gray-800');
+            } else {
+                totalElement.classList.remove('text-red-600', 'full-capacity');
+                totalElement.classList.add('text-gray-800');
+            }
+        }
+        
+        function showCapacityAlert() {
+            if (counters.fullCapacityTime) {
+                document.getElementById('fullTime').textContent = counters.fullCapacityTime;
+                document.getElementById('capacityAlert').classList.remove('hidden');
+            }
+        }
+        
+        function resetCounters() {
+            if (!confirm('Tem certeza que deseja reiniciar todos os contadores?')) return;
+            
+            counters = {
+                men: 0,
+                women: 0,
+                children: 0,
+                total: 0,
+                fullCapacityTime: null
+            };
+            
+            saveCountersToLocalStorage();
+            updateCounterDisplays();
+            document.getElementById('capacityAlert').classList.add('hidden');
+        }
+        
+        function saveCountersToLocalStorage() {
+            localStorage.setItem('customerCounters', JSON.stringify(counters));
+        }
+    </script>
+</body>
+</html>
